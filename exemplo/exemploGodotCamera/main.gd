@@ -1,22 +1,30 @@
 extends Node2D
 
-onready var nativeCamera = $picture/nativeCamera
+onready var nativeCamera = $VBoxContainer/picture/nativeCamera
+onready var pictureReturned = $VBoxContainer/picture
+onready var guiCamera = $VBoxContainer/guiCamera
+onready var btnPreview = $VBoxContainer/btnPreview
+onready var btnOpenNativeCamera = $VBoxContainer/btnOpenNativeCam
+onready var btnForwardBack = $VBoxContainer/guiCamera/btnForwardBack
+
 var facing = false
 var is_open = true
 
 func _ready():
+# warning-ignore:return_value_discarded
 	OS.request_permissions()
 	nativeCamera.connect("picture_taken", self, "on_picture_taken")
 	
 func _on_btnTakePicture_pressed():
-	$picture/anim.play_backwards("open")
+	guiCamera.hide()
+	btnPreview.show()
 	if nativeCamera.camera:
 		nativeCamera.take_picture()
 
 func _on_btnOpenNativeCam_pressed():
 	_reset()
 	if nativeCamera.camera and !is_open:
-		nativeCamera.camera.setImageSize(300) # width / height ascpect ratio
+		nativeCamera.camera.setImageSize(pictureReturned.texture.get_size().x) # width / height ascpect ratio
 		nativeCamera.camera.setImageRotated(90) # rotation
 		nativeCamera.camera.openCamera()
 
@@ -28,33 +36,36 @@ func _on_btnPreview_pressed():
 	if nativeCamera.camera: 
 		is_open = true
 		nativeCamera.set_view_visibilty(true)
-		$picture/anim.play("open")
+		guiCamera.show()
+		btnPreview.hide()
 
-func on_picture_taken(error, image_texture, extras):
+func on_picture_taken(error, image_texture, _extras):
 	if nativeCamera.camera:
 		if error == nativeCamera.ERROR.NONE:
-			$picture.texture = image_texture
+			pictureReturned.texture = image_texture
 			
-	$picture/anim.play_backwards("open")
+	guiCamera.hide()
+	btnPreview.show()
 	is_open = false
 	nativeCamera.set_view_visibilty(false)
 
 func _reset():
-	$picture.texture = ResourceLoader.load("res://camera.png")
+	pictureReturned.texture = ResourceLoader.load("res://camera.png")
 	is_open = false
 	nativeCamera.set_view_visibilty(false)
 
-func _on_btnTakePicture3_pressed():
+func _on_btnForwardBack_pressed():
 	if nativeCamera.camera:
 		nativeCamera.set_camera_facing(facing)
 		facing = !facing
 		
 		if facing:
-			$picture/nativeCamera/btnTakePicture3.text = "B" #back
+			btnForwardBack.text = "B" #back
 		else:
-			$picture/nativeCamera/btnTakePicture3.text = "F" #front
+			btnForwardBack.text = "F" #front
 
-func _on_btnTakePicture2_pressed():
+func _on_btnTakePreviewClose_pressed():
 	if nativeCamera.camera:
-		$picture/anim.play_backwards("open")
-		_reset()
+		guiCamera.hide()
+		btnPreview.show()
+	_reset()
